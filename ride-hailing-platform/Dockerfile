@@ -1,5 +1,6 @@
 # Dockerfile
-FROM node:20-alpine
+# Use slim (Debian-based) instead of alpine for Temporal SDK compatibility
+FROM node:20-slim
 
 WORKDIR /app
 

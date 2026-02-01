@@ -15,5 +15,18 @@ export const config = {
     database: process.env.DB_NAME || 'ridehail',
     maxOpenConns: parseInt(process.env.DB_MAX_OPEN_CONNS) || 10,
     maxIdleConns: parseInt(process.env.DB_MAX_IDLE_CONNS) || 2
+  },
+  rabbitmq: {
+    url: process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672',
+    enabled: process.env.RABBITMQ_ENABLED !== 'false'
+  },
+  temporal: {
+    address: process.env.TEMPORAL_ADDRESS || 'localhost:7233',
+    namespace: process.env.TEMPORAL_NAMESPACE || 'default',
+    taskQueue: process.env.TEMPORAL_TASK_QUEUE || 'ride-matching'
+  },
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT) || 6379
   }
 };
