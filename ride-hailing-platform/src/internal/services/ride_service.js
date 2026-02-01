@@ -2,12 +2,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { DomainErrors } from '../models/errors.js';
 import { Ride, RideStatus } from '../models/ride.js';
+import { RideRequestedEvent, Exchanges, EventTypes } from '../messaging/events.js';
 
 export class RideService {
-  constructor(rideRepo, driverRepo, fareCalculator) {
+  constructor(rideRepo, driverRepo, fareCalculator, rabbitMQ = null) {
     this.rideRepo = rideRepo;
     this.driverRepo = driverRepo;
     this.fareCalculator = fareCalculator;
+    this.rabbitMQ = rabbitMQ;
   }
 
   async createRide(tenantId, data, idempotencyKey) {
@@ -39,6 +41,37 @@ export class RideService {
     });
 
     await this.rideRepo.create(ride);
+
+    // Publish ride requested event for async driver matching
+    if (this.rabbitMQ) {
+      try {
+        const event = new RideRequestedEvent({
+          rideId: ride.id,
+          tenantId: tenantId,
+          riderId: data.rider_id,
+          vehicleType: data.vehicle_type,
+          pickupLatitude: data.pickup_location.latitude,
+          pickupLongitude: data.pickup_location.longitude,
+          dropoffLatitude: data.dropoff_location.latitude,
+          dropoffLongitude: data.dropoff_location.longitude,
+          timestamp: now
+        });
+
+        await this.rabbitMQ.publish(
+          Exchanges.RIDES,
+          EventTypes.RIDE_REQUESTED,
+          event.toJSON()
+        );
+
+        // Update ride status to searching
+        await this.rideRepo.updateStatus(ride.id, RideStatus.SEARCHING_DRIVER);
+        ride.status = RideStatus.SEARCHING_DRIVER;
+      } catch (publishError) {
+        console.error('Failed to publish ride event:', publishError);
+        // Don't fail the request, matching can be retried
+      }
+    }
+
     return ride;
   }
 

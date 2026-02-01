@@ -13,15 +13,15 @@ export class RideRepository {
       id: ride.id,
       tenant_id: ride.tenantId,
       rider_id: ride.riderId,
-      driver_id: ride.driverId,
+      driver_id: ride.driverId || null,
       status: ride.status,
       vehicle_type: ride.vehicleType,
       pickup_latitude: ride.pickupLocation.latitude,
       pickup_longitude: ride.pickupLocation.longitude,
-      pickup_address: ride.pickupLocation.address,
+      pickup_address: ride.pickupLocation.address || null,
       dropoff_latitude: ride.dropoffLocation.latitude,
       dropoff_longitude: ride.dropoffLocation.longitude,
-      dropoff_address: ride.dropoffLocation.address,
+      dropoff_address: ride.dropoffLocation.address || null,
       estimated_fare: ride.estimatedFare,
       requested_at: ride.requestedAt,
       idempotency_key: ride.idempotencyKey,
@@ -63,6 +63,27 @@ export class RideRepository {
         assigned_at: new Date(),
         updated_at: new Date()
       });
+  }
+
+  /**
+   * Assign driver with optimistic locking to prevent race conditions
+   * Only assigns if ride is in searching_driver status and has no driver
+   */
+  async assignDriverWithLock(rideId, driverId) {
+    const result = await this.db(this.table)
+      .where({ 
+        id: rideId,
+        status: 'searching_driver'
+      })
+      .whereNull('driver_id')
+      .update({
+        driver_id: driverId,
+        status: 'driver_assigned',
+        assigned_at: new Date(),
+        updated_at: new Date()
+      });
+
+    return result > 0; // Returns true if update was successful
   }
 
   async cancel(id, reason) {

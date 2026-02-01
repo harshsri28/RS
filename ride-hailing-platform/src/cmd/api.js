@@ -15,6 +15,8 @@ import { UserService } from '../internal/services/user_service.js';
 import { FareCalculator } from '../internal/services/fare/fare_calculator.js';
 import { recoveryMiddleware } from '../internal/api/middlewares/recovery.js';
 import { logger } from '../internal/api/middlewares/logging.js';
+import { createRabbitMQ } from '../pkg/messaging/rabbitmq.js';
+import { setupRabbitMQ } from '../internal/messaging/setup.js';
 
 async function bootstrap() {
   try {
@@ -24,6 +26,18 @@ async function bootstrap() {
     await db.raw('SELECT 1');
     logger.info('Database connection established');
 
+    // RabbitMQ connection (optional)
+    let rabbitMQ = null;
+    if (config.rabbitmq.enabled) {
+      try {
+        rabbitMQ = await createRabbitMQ(config.rabbitmq.url);
+        await setupRabbitMQ(rabbitMQ);
+        logger.info('RabbitMQ connection established');
+      } catch (rmqError) {
+        logger.warn({ err: rmqError }, 'RabbitMQ connection failed, running without async processing');
+      }
+    }
+
     // Repositories
     const userRepo = new UserRepository(db);
     const driverRepo = new DriverRepository(db);
@@ -31,10 +45,10 @@ async function bootstrap() {
     const tripRepo = new TripRepository(db);
     const paymentRepo = new PaymentRepository(db);
 
-    // Services
+    // Services (inject RabbitMQ for async processing)
     const fareCalculator = new FareCalculator();
-    const rideService = new RideService(rideRepo, driverRepo, fareCalculator);
-    const driverService = new DriverService(driverRepo, rideRepo);
+    const rideService = new RideService(rideRepo, driverRepo, fareCalculator, rabbitMQ);
+    const driverService = new DriverService(driverRepo, rideRepo, rabbitMQ);
     const tripService = new TripService(tripRepo, rideRepo, driverRepo, fareCalculator);
     const userService = new UserService(userRepo);
 
@@ -56,10 +70,13 @@ async function bootstrap() {
     });
 
     // Graceful shutdown
-    process.on('SIGTERM', () => {
+    process.on('SIGTERM', async () => {
       logger.info('SIGTERM signal received: closing HTTP server');
-      server.close(() => {
+      server.close(async () => {
         logger.info('HTTP server closed');
+        if (rabbitMQ) {
+          await rabbitMQ.close();
+        }
         db.destroy();
         process.exit(0);
       });

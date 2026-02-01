@@ -2,11 +2,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { DomainErrors } from '../models/errors.js';
 import { Driver, DriverStatus } from '../models/driver.js';
+import { DriverLocationUpdatedEvent, Exchanges, EventTypes } from '../messaging/events.js';
 
 export class DriverService {
-  constructor(driverRepo, rideRepo) {
+  constructor(driverRepo, rideRepo, rabbitMQ = null) {
     this.driverRepo = driverRepo;
     this.rideRepo = rideRepo;
+    this.rabbitMQ = rabbitMQ;
   }
 
   async createDriver(tenantId, data) {
@@ -39,10 +41,37 @@ export class DriverService {
     const driver = await this.driverRepo.getById(id, tenantId);
     if (!driver) throw DomainErrors.NOT_FOUND('driver');
 
-    await this.driverRepo.updateLocation(id, data.latitude, data.longitude);
+    // Publish to RabbitMQ for async processing (preferred for high-frequency updates)
+    if (this.rabbitMQ) {
+      try {
+        const event = new DriverLocationUpdatedEvent({
+          driverId: id,
+          tenantId: tenantId,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          status: data.status,
+          timestamp: new Date()
+        });
 
-    if (data.status) {
-      await this.updateStatus(id, tenantId, data.status);
+        await this.rabbitMQ.publish(
+          Exchanges.DRIVERS,
+          EventTypes.DRIVER_LOCATION_UPDATED,
+          event.toJSON()
+        );
+      } catch (publishError) {
+        console.error('Failed to publish location event, falling back to sync:', publishError);
+        // Fallback to synchronous update
+        await this.driverRepo.updateLocation(id, data.latitude, data.longitude);
+        if (data.status) {
+          await this.driverRepo.updateStatus(id, data.status);
+        }
+      }
+    } else {
+      // Synchronous update when RabbitMQ not available
+      await this.driverRepo.updateLocation(id, data.latitude, data.longitude);
+      if (data.status) {
+        await this.updateStatus(id, tenantId, data.status);
+      }
     }
   }
 
