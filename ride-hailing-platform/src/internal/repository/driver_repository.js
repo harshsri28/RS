@@ -81,7 +81,7 @@ export class DriverRepository {
       `, [lat, lng, lat]))
       .where({
         tenant_id: tenantId,
-        status: 'available',
+        status: 'available', // Only find available drivers
         vehicle_type: vehicleType
       })
       .whereNotNull('current_latitude')
@@ -91,6 +91,7 @@ export class DriverRepository {
       .orderBy('rating', 'desc')
       .limit(limit);
 
+    console.log(`findAvailableDrivers: Found ${drivers.length} drivers within ${radiusKm}km for ${vehicleType}`);
     return drivers.map(d => new Driver(d));
   }
 

@@ -7,7 +7,8 @@ export async function setupRabbitMQ(rmq) {
     { name: Exchanges.RIDES, type: 'topic' },
     { name: Exchanges.DRIVERS, type: 'topic' },
     { name: Exchanges.TRIPS, type: 'topic' },
-    { name: Exchanges.PAYMENTS, type: 'topic' }
+    { name: Exchanges.PAYMENTS, type: 'topic' },
+    { name: Exchanges.WEBSOCKET, type: 'topic' } // For WebSocket notifications
   ];
 
   for (const exchange of exchanges) {
@@ -20,7 +21,8 @@ export async function setupRabbitMQ(rmq) {
     Queues.DRIVER_MATCHING,
     Queues.LOCATION_PROCESSING,
     Queues.NOTIFICATIONS,
-    Queues.PAYMENT_PROCESSING
+    Queues.PAYMENT_PROCESSING,
+    Queues.WEBSOCKET_NOTIFICATIONS // New queue for WebSocket notifications
   ];
 
   for (const queue of queues) {
@@ -34,7 +36,9 @@ export async function setupRabbitMQ(rmq) {
     { queue: Queues.LOCATION_PROCESSING, routingKey: 'driver.location.*', exchange: Exchanges.DRIVERS },
     { queue: Queues.NOTIFICATIONS, routingKey: 'ride.*', exchange: Exchanges.RIDES },
     { queue: Queues.NOTIFICATIONS, routingKey: 'trip.*', exchange: Exchanges.TRIPS },
-    { queue: Queues.PAYMENT_PROCESSING, routingKey: 'payment.*', exchange: Exchanges.PAYMENTS }
+    { queue: Queues.PAYMENT_PROCESSING, routingKey: 'payment.*', exchange: Exchanges.PAYMENTS },
+    // WebSocket notification bindings
+    { queue: Queues.WEBSOCKET_NOTIFICATIONS, routingKey: 'ws.*', exchange: Exchanges.WEBSOCKET }
   ];
 
   for (const binding of bindings) {

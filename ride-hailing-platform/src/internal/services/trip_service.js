@@ -59,9 +59,29 @@ export class TripService {
       durationMinutes = Math.max(0, Math.round((endTime - new Date(trip.startTime)) / 60000));
     }
     
+    // Calculate distance from start to end location if not provided
+    let distanceKm = data.distance_km;
+    if (distanceKm === undefined || distanceKm === null) {
+      const endLocation = data.end_location || { latitude: data.latitude, longitude: data.longitude };
+      const startLocation = trip.startLocation || ride.pickupLocation;
+      
+      if (endLocation && startLocation) {
+        distanceKm = this.calculateDistance(startLocation, endLocation);
+      } else {
+        // Use estimated distance from ride as fallback
+        const pickupLoc = ride.pickupLocation;
+        const dropoffLoc = ride.dropoffLocation;
+        if (pickupLoc && dropoffLoc) {
+          distanceKm = this.calculateDistance(pickupLoc, dropoffLoc);
+        } else {
+          distanceKm = 1; // Minimum fallback
+        }
+      }
+    }
+    
     const fareBreakdown = this.fareCalculator.calculateFare(
       ride.vehicleType,
-      data.distance_km,
+      distanceKm,
       durationMinutes,
       trip.surgeMultiplier
     );
@@ -69,7 +89,7 @@ export class TripService {
     trip.status = TripStatus.ENDED;
     trip.endLocation = data.end_location || { latitude: data.latitude, longitude: data.longitude };
     trip.endTime = endTime;
-    trip.distanceKm = data.distance_km;
+    trip.distanceKm = distanceKm;
     trip.durationMinutes = durationMinutes;
     trip.baseFare = fareBreakdown.baseFare;
     trip.distanceFare = fareBreakdown.distanceFare;
@@ -88,5 +108,21 @@ export class TripService {
     const trip = await this.tripRepo.getById(id);
     if (!trip) throw DomainErrors.NOT_FOUND('trip');
     return trip;
+  }
+
+  /**
+   * Calculate distance between two points using Haversine formula
+   */
+  calculateDistance(from, to) {
+    const R = 6371; // Earth radius in km
+    const dLat = (to.latitude - from.latitude) * Math.PI / 180;
+    const dLon = (to.longitude - from.longitude) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(from.latitude * Math.PI / 180) * Math.cos(to.latitude * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    return distance * 1.3; // Road factor - actual road distance is typically 30% more than straight line
   }
 }

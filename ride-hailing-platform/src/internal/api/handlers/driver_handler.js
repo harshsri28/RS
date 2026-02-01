@@ -56,4 +56,14 @@ export class DriverHandler {
       errorResponse(res, err);
     }
   }
+
+  async declineRide(req, res) {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || 'default';
+      await this.driverService.declineRide(req.params.id, tenantId, req.body);
+      successResponse(res, { status: 'declined', rideId: req.body.ride_id, driverId: req.params.id });
+    } catch (err) {
+      errorResponse(res, err);
+    }
+  }
 }

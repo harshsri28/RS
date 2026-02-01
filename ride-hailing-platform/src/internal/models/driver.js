@@ -45,4 +45,25 @@ export class Driver {
       locationUpdatedAt: driver.locationUpdatedAt
     };
   }
+
+  /**
+   * Convert to JSON for caching
+   */
+  toJSON() {
+    return {
+      id: this.id,
+      user_id: this.userId,
+      tenant_id: this.tenantId,
+      vehicle_type: this.vehicleType,
+      vehicle_number: this.vehicleNumber,
+      license_number: this.licenseNumber,
+      status: this.status,
+      current_location: this.currentLocation,
+      location_updated_at: this.locationUpdatedAt,
+      rating: this.rating,
+      total_trips: this.totalTrips,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt
+    };
+  }
 }

@@ -39,24 +39,51 @@ export class Ride {
 
   static toResponse(ride, driver = null) {
     const response = {
-      rideId: ride.id,
+      id: ride.id,
+      rider_id: ride.riderId,
+      driver_id: ride.driverId,
       status: ride.status,
-      vehicleType: ride.vehicleType,
-      pickupLocation: ride.pickupLocation,
-      dropoffLocation: ride.dropoffLocation,
-      estimatedFare: ride.estimatedFare,
-      requestedAt: ride.requestedAt,
-      createdAt: ride.createdAt
+      vehicle_type: ride.vehicleType,
+      pickup_location: ride.pickupLocation,
+      dropoff_location: ride.dropoffLocation,
+      estimated_fare: ride.estimatedFare,
+      requested_at: ride.requestedAt,
+      created_at: ride.createdAt,
+      updated_at: ride.updatedAt
     };
 
     if (driver) {
-      response.driverDetails = {
+      response.driver_details = {
         id: driver.id,
-        vehicleNumber: driver.vehicleNumber,
+        vehicle_number: driver.vehicleNumber,
         rating: driver.rating
       };
     }
 
     return response;
+  }
+
+  /**
+   * Convert to JSON for caching
+   */
+  toJSON() {
+    return {
+      id: this.id,
+      tenant_id: this.tenantId,
+      rider_id: this.riderId,
+      driver_id: this.driverId,
+      status: this.status,
+      vehicle_type: this.vehicleType,
+      pickup_location: this.pickupLocation,
+      dropoff_location: this.dropoffLocation,
+      estimated_fare: this.estimatedFare,
+      requested_at: this.requestedAt,
+      assigned_at: this.assignedAt,
+      cancelled_at: this.cancelledAt,
+      cancellation_reason: this.cancellationReason,
+      idempotency_key: this.idempotencyKey,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt
+    };
   }
 }

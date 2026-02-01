@@ -7,6 +7,10 @@ export const EventTypes = {
   RIDE_ASSIGNED: 'ride.assigned',
   RIDE_ACCEPTED: 'ride.accepted',
   RIDE_DECLINED: 'ride.declined',
+  RIDE_OFFER: 'ride.offer',
+  RIDE_OFFER_EXPIRED: 'ride.offer.expired',
+  RIDE_CANCELLED: 'ride.cancelled',
+  NO_DRIVER_FOUND: 'ride.no_driver_found',
   TRIP_STARTED: 'trip.started',
   TRIP_ENDED: 'trip.ended',
   PAYMENT_INITIATED: 'payment.initiated'
@@ -17,7 +21,8 @@ export const Exchanges = {
   RIDES: 'rides',
   DRIVERS: 'drivers',
   TRIPS: 'trips',
-  PAYMENTS: 'payments'
+  PAYMENTS: 'payments',
+  WEBSOCKET: 'websocket' // New exchange for WebSocket notifications
 };
 
 // Queues
@@ -25,7 +30,8 @@ export const Queues = {
   DRIVER_MATCHING: 'driver.matching',
   LOCATION_PROCESSING: 'location.processing',
   NOTIFICATIONS: 'notifications',
-  PAYMENT_PROCESSING: 'payment.processing'
+  PAYMENT_PROCESSING: 'payment.processing',
+  WEBSOCKET_NOTIFICATIONS: 'websocket.notifications' // New queue for WS notifications
 };
 
 // Event classes
@@ -37,8 +43,11 @@ export class RideRequestedEvent {
     this.vehicleType = data.vehicleType;
     this.pickupLatitude = data.pickupLatitude;
     this.pickupLongitude = data.pickupLongitude;
+    this.pickupAddress = data.pickupAddress;
     this.dropoffLatitude = data.dropoffLatitude;
     this.dropoffLongitude = data.dropoffLongitude;
+    this.dropoffAddress = data.dropoffAddress;
+    this.estimatedFare = data.estimatedFare;
     this.timestamp = data.timestamp || new Date();
   }
 
@@ -54,8 +63,11 @@ export class RideRequestedEvent {
       vehicleType: this.vehicleType,
       pickupLatitude: this.pickupLatitude,
       pickupLongitude: this.pickupLongitude,
+      pickupAddress: this.pickupAddress,
       dropoffLatitude: this.dropoffLatitude,
       dropoffLongitude: this.dropoffLongitude,
+      dropoffAddress: this.dropoffAddress,
+      estimatedFare: this.estimatedFare,
       timestamp: this.timestamp
     };
   }
@@ -226,6 +238,60 @@ export class PaymentInitiatedEvent {
       riderId: this.riderId,
       amount: this.amount,
       tenantId: this.tenantId,
+      timestamp: this.timestamp
+    };
+  }
+}
+
+// Ride offer event for WebSocket notification
+export class RideOfferEvent {
+  constructor(data) {
+    this.type = 'new_ride_offer';
+    this.targetUserId = data.targetUserId; // Driver ID to send to
+    this.rideId = data.rideId;
+    this.tenantId = data.tenantId;
+    this.expiresAt = data.expiresAt;
+    this.details = data.details || {};
+    this.timestamp = data.timestamp || new Date();
+  }
+
+  static fromJSON(json) {
+    return new RideOfferEvent(json);
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      targetUserId: this.targetUserId,
+      rideId: this.rideId,
+      tenantId: this.tenantId,
+      expiresAt: this.expiresAt,
+      details: this.details,
+      timestamp: this.timestamp
+    };
+  }
+}
+
+// Generic WebSocket notification event
+export class WebSocketNotificationEvent {
+  constructor(data) {
+    this.type = data.type; // WebSocket message type
+    this.targetUserId = data.targetUserId; // User to send to
+    this.targetUserIds = data.targetUserIds; // Multiple users to send to
+    this.payload = data.payload; // Message payload
+    this.timestamp = data.timestamp || new Date();
+  }
+
+  static fromJSON(json) {
+    return new WebSocketNotificationEvent(json);
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      targetUserId: this.targetUserId,
+      targetUserIds: this.targetUserIds,
+      payload: this.payload,
       timestamp: this.timestamp
     };
   }

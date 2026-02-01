@@ -63,8 +63,8 @@ async function run() {
       address: config.temporal.address
     });
 
-    // Create activities with dependencies
-    const activities = createMatchingActivities(driverRepo, rideRepo);
+    // Create activities with dependencies (including RabbitMQ for WebSocket notifications)
+    const activities = createMatchingActivities(driverRepo, rideRepo, rmq);
 
     // Create Temporal worker
     worker = await Worker.create({

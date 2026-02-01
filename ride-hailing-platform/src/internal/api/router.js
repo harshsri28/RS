@@ -1,10 +1,12 @@
 // src/internal/api/router.js
 import express from 'express';
+import cors from 'cors';
 import { RideHandler } from './handlers/ride_handler.js';
 import { DriverHandler } from './handlers/driver_handler.js';
 import { TripHandler } from './handlers/trip_handler.js';
 import { UserHandler } from './handlers/user_handler.js';
 import { HealthHandler } from './handlers/health_handler.js';
+import { WebSocketHandler } from './handlers/websocket_handler.js';
 import { authMiddleware } from './middlewares/auth.js';
 import { loggingMiddleware } from './middlewares/logging.js';
 import { idempotencyMiddleware } from './middlewares/idempotency.js';
@@ -14,9 +16,17 @@ export function createRouter(services, db) {
 
   const rideHandler = new RideHandler(services.rideService);
   const driverHandler = new DriverHandler(services.driverService);
-  const tripHandler = new TripHandler(services.tripService);
+  const tripHandler = new TripHandler(services.tripService, services.notificationService);
   const userHandler = new UserHandler(services.userService);
   const healthHandler = new HealthHandler(db);
+  const wsHandler = services.wsHub ? new WebSocketHandler(services.wsHub) : null;
+
+  // CORS configuration for frontend
+  router.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-Tenant-ID']
+  }));
 
   // Global Middlewares
   router.use(express.json());
@@ -25,6 +35,11 @@ export function createRouter(services, db) {
 
   // Health
   router.get('/health', (req, res) => healthHandler.health(req, res));
+  
+  // WebSocket stats endpoint
+  if (wsHandler) {
+    router.get('/ws/stats', (req, res) => wsHandler.getStats(req, res));
+  }
 
   // V1 API
   const v1 = express.Router();
@@ -45,6 +60,7 @@ export function createRouter(services, db) {
   v1.post('/drivers/:id/location', (req, res) => driverHandler.updateLocation(req, res));
   v1.post('/drivers/:id/status', (req, res) => driverHandler.updateStatus(req, res));
   v1.post('/drivers/:id/accept', (req, res) => driverHandler.acceptRide(req, res));
+  v1.post('/drivers/:id/decline', (req, res) => driverHandler.declineRide(req, res));
 
   // Trips
   v1.post('/trips', (req, res) => tripHandler.startTrip(req, res));

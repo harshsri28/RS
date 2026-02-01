@@ -52,7 +52,18 @@ export class DriverMatchingConsumer {
           riderId: event.riderId,
           vehicleType: event.vehicleType,
           pickupLatitude: event.pickupLatitude,
-          pickupLongitude: event.pickupLongitude
+          pickupLongitude: event.pickupLongitude,
+          estimatedFare: event.estimatedFare,
+          pickupLocation: {
+            latitude: event.pickupLatitude,
+            longitude: event.pickupLongitude,
+            address: event.pickupAddress
+          },
+          dropoffLocation: {
+            latitude: event.dropoffLatitude,
+            longitude: event.dropoffLongitude,
+            address: event.dropoffAddress
+          }
         }]
       });
 

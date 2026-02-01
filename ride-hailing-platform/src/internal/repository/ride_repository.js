@@ -67,14 +67,13 @@ export class RideRepository {
 
   /**
    * Assign driver with optimistic locking to prevent race conditions
-   * Only assigns if ride is in searching_driver status and has no driver
+   * Only assigns if ride is in searching_driver/requested status and has no driver
+   * This ensures idempotency - if two drivers accept simultaneously, only one succeeds
    */
   async assignDriverWithLock(rideId, driverId) {
     const result = await this.db(this.table)
-      .where({ 
-        id: rideId,
-        status: 'searching_driver'
-      })
+      .where({ id: rideId })
+      .whereIn('status', ['searching_driver', 'requested']) // Accept either status
       .whereNull('driver_id')
       .update({
         driver_id: driverId,
@@ -83,6 +82,7 @@ export class RideRepository {
         updated_at: new Date()
       });
 
+    console.log(`assignDriverWithLock: rideId=${rideId}, driverId=${driverId}, result=${result}`);
     return result > 0; // Returns true if update was successful
   }
 

@@ -52,8 +52,11 @@ export class RideService {
           vehicleType: data.vehicle_type,
           pickupLatitude: data.pickup_location.latitude,
           pickupLongitude: data.pickup_location.longitude,
+          pickupAddress: data.pickup_location.address,
           dropoffLatitude: data.dropoff_location.latitude,
           dropoffLongitude: data.dropoff_location.longitude,
+          dropoffAddress: data.dropoff_location.address,
+          estimatedFare: estimatedFare,
           timestamp: now
         });
 
