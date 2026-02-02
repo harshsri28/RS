@@ -24,6 +24,8 @@ export async function rideMatchingWorkflow(input) {
     dropoffLocation
   } = input;
 
+  console.log(`[Workflow] Input received - rideId: ${rideId}, estimatedFare: ${estimatedFare}, vehicleType: ${vehicleType}`);
+
   // Create activity proxies with timeouts
   const activities = proxyActivities({
     startToCloseTimeout: '30 seconds',

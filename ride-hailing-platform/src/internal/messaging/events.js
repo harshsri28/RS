@@ -47,7 +47,7 @@ export class RideRequestedEvent {
     this.dropoffLatitude = data.dropoffLatitude;
     this.dropoffLongitude = data.dropoffLongitude;
     this.dropoffAddress = data.dropoffAddress;
-    this.estimatedFare = data.estimatedFare;
+    this.estimatedFare = data.estimatedFare !== undefined ? data.estimatedFare : data.estimated_fare;
     this.timestamp = data.timestamp || new Date();
   }
 

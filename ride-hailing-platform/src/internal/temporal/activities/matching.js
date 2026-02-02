@@ -78,6 +78,11 @@ export function createMatchingActivities(driverRepo, rideRepo, rabbitMQ = null) 
       const { driverId, rideDetails, timeoutMs = 60000 } = input;
 
       console.log(`[Activity] sendRideOfferToDriver called for driver ${driverId}`);
+      console.log(`[Activity] rideDetails:`, JSON.stringify({
+        rideId: rideDetails.rideId,
+        estimatedFare: rideDetails.estimatedFare,
+        vehicleType: rideDetails.vehicleType
+      }));
 
       // Check if driver is still available
       const driver = await driverRepo.getById(driverId, rideDetails.tenantId);
@@ -101,12 +106,13 @@ export function createMatchingActivities(driverRepo, rideRepo, rabbitMQ = null) 
             latitude: rideDetails.dropoffLocation.latitude,
             longitude: rideDetails.dropoffLocation.longitude
           } : null,
-          estimated_fare: rideDetails.estimatedFare,
+          estimated_fare: rideDetails.estimatedFare ?? null,
           vehicle_type: rideDetails.vehicleType,
           distance_km: rideDetails.distance_km
         }
       };
 
+      console.log(`[Activity] Payload estimated_fare: ${payload.details.estimated_fare}`);
       console.log(`[Activity] Publishing ride offer to RabbitMQ for driver ${driverId}, rideId: ${rideDetails.rideId}`);
 
       // Send via RabbitMQ -> WebSocket consumer -> Driver's browser

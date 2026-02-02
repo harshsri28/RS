@@ -37,7 +37,7 @@ export class DriverMatchingConsumer {
       return;
     }
 
-    console.log(`Processing ride request: ${event.rideId}`);
+    console.log(`Processing ride request: ${event.rideId}, estimatedFare: ${event.estimatedFare}`);
 
     try {
       // Start Temporal workflow

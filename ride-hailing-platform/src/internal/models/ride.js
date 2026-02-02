@@ -27,7 +27,7 @@ export class Ride {
       longitude: data.dropoff_longitude,
       address: data.dropoff_address
     };
-    this.estimatedFare = data.estimated_fare || data.estimatedFare;
+    this.estimatedFare = data.estimated_fare !== undefined ? data.estimated_fare : data.estimatedFare;
     this.requestedAt = data.requested_at || data.requestedAt;
     this.assignedAt = data.assigned_at || data.assignedAt;
     this.cancelledAt = data.cancelled_at || data.cancelledAt;

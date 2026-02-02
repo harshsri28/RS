@@ -506,10 +506,14 @@ const RiderDashboard: React.FC = () => {
                   <span className="text-gray-600">Ride ID:</span>
                   <span className="font-mono text-xs">{currentRide.id.slice(0, 8)}...</span>
                 </div>
-                {currentRide.estimated_fare && (
+                {currentRide.estimated_fare != null && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Estimated Fare:</span>
-                    <span className="font-medium">₹{currentRide.estimated_fare.toFixed(2)}</span>
+                    <span className="font-medium">
+                      ₹{typeof currentRide.estimated_fare === 'number' 
+                        ? currentRide.estimated_fare.toFixed(2) 
+                        : parseFloat(String(currentRide.estimated_fare)).toFixed(2)}
+                    </span>
                   </div>
                 )}
                 {currentRide.driver_id && (

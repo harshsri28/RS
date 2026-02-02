@@ -323,12 +323,16 @@ const DriverDashboard: React.FC = () => {
         longitude: location.lng
       });
       
-      // Show trip completed summary
+      // Show trip completed summary - convert string values to numbers
+      const fareValue = trip.totalFare || trip.final_fare || 0;
+      const distanceValue = trip.distanceKm || trip.distance_km || 0;
+      const durationValue = trip.durationMinutes || trip.duration_minutes || 0;
+      
       setTripCompleted({
         tripId: trip.tripId || currentTripId,
-        fare: trip.totalFare || trip.final_fare || 0,
-        distance: trip.distanceKm || trip.distance_km || 0,
-        duration: trip.durationMinutes || trip.duration_minutes || 0
+        fare: typeof fareValue === 'string' ? parseFloat(fareValue) : fareValue,
+        distance: typeof distanceValue === 'string' ? parseFloat(distanceValue) : distanceValue,
+        duration: typeof durationValue === 'string' ? parseFloat(durationValue) : durationValue
       });
       
       setIsOnTrip(false);
@@ -473,7 +477,11 @@ const DriverDashboard: React.FC = () => {
                     <div>
                       <p className="text-xs text-gray-500">Estimated Fare</p>
                       <p className="font-bold text-lg text-green-600">
-                        ₹{rideOffer.details?.estimated_fare?.toFixed(2) || 'N/A'}
+                        ₹{rideOffer.details?.estimated_fare != null 
+                          ? (typeof rideOffer.details.estimated_fare === 'number' 
+                              ? rideOffer.details.estimated_fare.toFixed(2) 
+                              : parseFloat(rideOffer.details.estimated_fare).toFixed(2))
+                          : 'N/A'}
                       </p>
                     </div>
                     {rideOffer.details?.distance_km && (
@@ -593,21 +601,6 @@ const DriverDashboard: React.FC = () => {
               )}
             </div>
           )}
-
-          {/* Stats */}
-          <div className="mt-6">
-            <h3 className="font-semibold mb-3">Today's Stats</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-green-50 rounded-lg text-center">
-                <p className="text-2xl font-bold text-green-600">0</p>
-                <p className="text-xs text-gray-600">Trips</p>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-lg text-center">
-                <p className="text-2xl font-bold text-blue-600">₹0</p>
-                <p className="text-xs text-gray-600">Earnings</p>
-              </div>
-            </div>
-          </div>
 
           {/* Driver Info */}
           <div className="mt-6 p-4 bg-green-50 rounded-lg">

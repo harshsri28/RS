@@ -24,6 +24,8 @@ export class RideService {
       data.dropoff_location
     );
 
+    console.log(`[RideService] Estimated fare calculated: ${estimatedFare} for vehicle_type: ${data.vehicle_type}`);
+
     const now = new Date();
     const ride = new Ride({
       id: uuidv4(),
